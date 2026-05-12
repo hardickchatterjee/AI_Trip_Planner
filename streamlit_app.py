@@ -11,6 +11,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ── Session state ────────────────────────────────────────────────────────────
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "prefill" not in st.session_state:
+    st.session_state.prefill = ""
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
@@ -20,7 +26,6 @@ html, body, [class*="css"] {
     background-color: #0a0f1e;
     color: #e8e4da;
 }
-
 .stApp {
     background:
         radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,180,60,0.10) 0%, transparent 60%),
@@ -28,66 +33,81 @@ html, body, [class*="css"] {
         #0a0f1e;
     min-height: 100vh;
 }
-
 #MainMenu, footer, header { visibility: hidden; }
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 4rem;
-    max-width: 760px;
+.block-container { padding-top: 1.5rem; padding-bottom: 4rem; max-width: 780px; }
+
+/* ── Remove ALL blank gaps from Streamlit internals ── */
+div[data-testid="stForm"] {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
 }
+div[data-testid="stForm"] > div:first-child { margin-top: 0 !important; padding-top: 0 !important; }
+.element-container { margin-bottom: 0 !important; }
+div[data-testid="stVerticalBlock"] > div { gap: 0 !important; }
 
 /* ── Hero ── */
-.hero {
-    text-align: center;
-    padding: 2.5rem 1rem 1.5rem;
-}
+.hero { text-align: center; padding: 2.5rem 1rem 1.5rem; }
 .hero-eyebrow {
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: #c9a84c;
-    margin-bottom: 0.75rem;
+    font-size: 0.68rem; font-weight: 500; letter-spacing: 0.22em;
+    text-transform: uppercase; color: #c9a84c; margin-bottom: 0.75rem;
 }
 .hero-title {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(2.6rem, 6vw, 3.8rem);
-    font-weight: 700;
-    color: #f5f0e8;
-    line-height: 1.1;
-    margin: 0 0 0.6rem;
-    letter-spacing: -0.02em;
+    font-size: clamp(2.6rem, 6vw, 3.8rem); font-weight: 700;
+    color: #f5f0e8; line-height: 1.1; margin: 0 0 0.6rem; letter-spacing: -0.02em;
 }
 .hero-title span { color: #c9a84c; }
 .hero-sub {
-    font-size: 0.93rem;
-    color: #7a7a8a;
-    font-weight: 300;
-    max-width: 420px;
-    margin: 0 auto;
-    line-height: 1.65;
+    font-size: 0.93rem; color: #7a7a8a; font-weight: 300;
+    max-width: 420px; margin: 0 auto; line-height: 1.65;
 }
 .hero-divider {
-    width: 48px;
-    height: 2px;
+    width: 48px; height: 2px;
     background: linear-gradient(90deg, #c9a84c, transparent);
-    margin: 1.4rem auto 0;
-    border-radius: 2px;
+    margin: 1.4rem auto 0; border-radius: 2px;
+}
+
+/* ── Suggestion label ── */
+.suggestion-label {
+    font-size: 0.68rem; color: #44445a; letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 1.5rem 0 0.6rem;
+    font-weight: 500;
+}
+
+/* ── Pill buttons — override Streamlit defaults ── */
+div[data-testid="column"] .stButton > button {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #6a6a7a !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.78rem !important;
+    padding: 0.32rem 0.85rem !important;
+    border-radius: 20px !important;
+    white-space: nowrap !important;
+    transition: all 0.18s ease !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+div[data-testid="column"] .stButton > button:hover {
+    border-color: rgba(201,168,76,0.45) !important;
+    color: #c9a84c !important;
+    background: rgba(201,168,76,0.07) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* ── Input card ── */
 .input-card {
     background: rgba(255,255,255,0.035);
-    border: 1px solid rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 16px;
-    padding: 1.5rem 1.75rem 1.25rem;
-    margin: 1.5rem 0 0;
+    padding: 1.4rem 1.6rem 1.3rem;
+    margin: 0.75rem 0 0;
     backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
 }
-
-/* ── Streamlit form border reset ── */
-div[data-testid="stForm"] { border: none !important; padding: 0 !important; }
 
 /* ── Text input ── */
 .stTextInput > div > div > input {
@@ -107,133 +127,116 @@ div[data-testid="stForm"] { border: none !important; padding: 0 !important; }
 }
 .stTextInput > div > div > input::placeholder { color: #44445a !important; }
 .stTextInput label {
-    color: #7a7a8a !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    margin-bottom: 0.4rem !important;
+    color: #7a7a8a !important; font-size: 0.75rem !important;
+    font-weight: 500 !important; letter-spacing: 0.1em !important;
+    text-transform: uppercase !important; margin-bottom: 0.35rem !important;
+    display: block !important;
 }
 
-/* ── Submit button — full width gold ── */
-.stFormSubmitButton { width: 100% !important; margin-top: 0.6rem; }
+/* ── Submit button — full width ── */
+.stFormSubmitButton { width: 100% !important; margin-top: 0.75rem !important; }
 .stFormSubmitButton > button {
+    display: block !important;
     width: 100% !important;
     background: linear-gradient(135deg, #b8940e 0%, #e8c96a 50%, #b8940e 100%) !important;
     background-size: 200% !important;
     color: #0a0f1e !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.82rem !important;
-    letter-spacing: 0.12em !important;
-    text-transform: uppercase !important;
-    border: none !important;
-    border-radius: 10px !important;
-    padding: 0.7rem 1.5rem !important;
-    cursor: pointer !important;
+    font-weight: 700 !important; font-size: 0.85rem !important;
+    letter-spacing: 0.14em !important; text-transform: uppercase !important;
+    border: none !important; border-radius: 10px !important;
+    padding: 0.78rem 1.5rem !important; cursor: pointer !important;
     transition: all 0.25s ease !important;
-    box-shadow: 0 4px 20px rgba(201,168,76,0.25) !important;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.28) !important;
 }
 .stFormSubmitButton > button:hover {
-    box-shadow: 0 6px 30px rgba(201,168,76,0.45) !important;
+    box-shadow: 0 6px 30px rgba(201,168,76,0.48) !important;
     transform: translateY(-1px) !important;
 }
 
-/* ── Suggestion pills ── */
-.suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    margin: 1rem 0 0;
-}
-.pill {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.09);
-    color: #6a6a7a;
-    font-size: 0.76rem;
-    padding: 0.28rem 0.8rem;
-    border-radius: 20px;
-    white-space: nowrap;
+/* ── Chat history section ── */
+.history-label {
+    font-size: 0.68rem; color: #33334a; letter-spacing: 0.1em;
+    text-transform: uppercase; margin: 2rem 0 0.75rem;
+    font-weight: 500; padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
-/* ── Response card header ── */
-.resp-header-wrap {
-    margin-top: 2rem;
+/* ── User bubble ── */
+.chat-user-row { display: flex; justify-content: flex-end; margin: 1rem 0 0.25rem; }
+.chat-bubble-user {
+    background: rgba(201,168,76,0.11);
+    border: 1px solid rgba(201,168,76,0.22);
+    border-radius: 14px 14px 4px 14px;
+    padding: 0.65rem 1rem;
+    max-width: 78%;
+    font-size: 0.9rem; color: #e8c96a; font-weight: 500; line-height: 1.5;
+}
+.chat-bubble-meta {
+    font-size: 0.63rem; color: #2a2a3a;
+    text-align: right; margin: 0.2rem 0 0; letter-spacing: 0.04em;
+}
+
+/* ── AI bubble ── */
+.chat-bubble-ai {
     background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(201,168,76,0.18);
-    border-radius: 16px 16px 0 0;
+    border: 1px solid rgba(201,168,76,0.14);
+    border-radius: 4px 14px 14px 14px;
     overflow: hidden;
-    box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.28);
+    margin: 0.5rem 0 0;
     position: relative;
 }
-.resp-header-wrap::before {
+.chat-bubble-ai::before {
     content: '';
-    display: block;
-    height: 2px;
+    display: block; height: 2px;
     background: linear-gradient(90deg, transparent 0%, #c9a84c 40%, transparent 100%);
 }
-.resp-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.75rem 0.9rem;
+.chat-ai-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.65rem 1.25rem 0.6rem;
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
-.resp-badge {
-    background: rgba(201,168,76,0.12);
-    color: #c9a84c;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    padding: 0.22rem 0.65rem;
-    border-radius: 20px;
-    border: 1px solid rgba(201,168,76,0.28);
+.chat-ai-badge {
+    background: rgba(201,168,76,0.11); color: #c9a84c;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 0.18rem 0.55rem;
+    border-radius: 20px; border: 1px solid rgba(201,168,76,0.25);
 }
-.resp-time {
-    font-size: 0.73rem;
-    color: #44445a;
-    font-weight: 300;
-}
-
-/* ── Response body container ── */
-.resp-body-wrap {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(201,168,76,0.18);
-    border-top: none;
-    padding: 1.25rem 1.75rem 0.5rem;
-}
-
-/* ── Response footer ── */
-.resp-footer-wrap {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(201,168,76,0.18);
-    border-top: none;
-    border-radius: 0 0 16px 16px;
-    padding: 0.6rem 1.75rem 0.9rem;
-}
-.resp-disclaimer {
-    font-size: 0.72rem;
-    color: #33334a;
+.chat-ai-time { font-size: 0.67rem; color: #33334a; font-weight: 300; }
+.chat-ai-body  { padding: 0.75rem 1.25rem 0.25rem; }
+.chat-ai-footer {
+    padding: 0.35rem 1.25rem 0.6rem;
     border-top: 1px solid rgba(255,255,255,0.04);
-    padding-top: 0.7rem;
+    font-size: 0.66rem; color: #2a2a3a;
 }
 
-/* ── Fix markdown heading colors ── */
+/* ── Markdown overrides ── */
 [data-testid="stMarkdownContainer"] h1,
 [data-testid="stMarkdownContainer"] h2,
 [data-testid="stMarkdownContainer"] h3 {
     font-family: 'Playfair Display', serif !important;
-    color: #f0ece2 !important;
-    font-weight: 700 !important;
+    color: #f0ece2 !important; font-weight: 700 !important;
 }
-[data-testid="stMarkdownContainer"] h1 { font-size: 1.6rem !important; margin-top: 1.25rem !important; }
-[data-testid="stMarkdownContainer"] h2 { font-size: 1.25rem !important; margin-top: 1rem !important; }
-[data-testid="stMarkdownContainer"] h3 { font-size: 1.05rem !important; margin-top: 0.75rem !important; }
+[data-testid="stMarkdownContainer"] h1 { font-size: 1.4rem !important; margin-top: 1rem !important; }
+[data-testid="stMarkdownContainer"] h2 { font-size: 1.15rem !important; margin-top: 0.85rem !important; }
+[data-testid="stMarkdownContainer"] h3 { font-size: 1rem !important; margin-top: 0.7rem !important; }
 [data-testid="stMarkdownContainer"] p  { color: #a8a49a !important; line-height: 1.75 !important; }
 [data-testid="stMarkdownContainer"] li { color: #a8a49a !important; line-height: 1.7 !important; }
 [data-testid="stMarkdownContainer"] strong { color: #e8e4da !important; }
 [data-testid="stMarkdownContainer"] hr { border-color: rgba(255,255,255,0.07) !important; }
+
+/* ── Clear button ── */
+.stButton.clear > button {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    color: #2a2a3a !important; font-size: 0.67rem !important;
+    padding: 0.18rem 0.55rem !important; border-radius: 6px !important;
+}
+.stButton.clear > button:hover {
+    border-color: rgba(180,50,50,0.3) !important;
+    color: #884444 !important;
+}
 
 /* ── Spinner ── */
 .stSpinner > div { border-top-color: #c9a84c !important; }
@@ -242,25 +245,19 @@ div[data-testid="stForm"] { border: none !important; padding: 0 !important; }
 .stAlert {
     background: rgba(200,50,50,0.07) !important;
     border: 1px solid rgba(200,50,50,0.22) !important;
-    border-radius: 10px !important;
-    color: #d88888 !important;
-    margin-top: 1rem;
+    border-radius: 10px !important; color: #d88888 !important; margin-top: 1rem;
 }
 
 /* ── Footer ── */
 .footer {
-    text-align: center;
-    margin-top: 3rem;
-    padding-top: 1.25rem;
+    text-align: center; margin-top: 3rem; padding-top: 1.25rem;
     border-top: 1px solid rgba(255,255,255,0.04);
-    font-size: 0.68rem;
-    color: #2a2a3a;
-    letter-spacing: 0.06em;
+    font-size: 0.67rem; color: #22223a; letter-spacing: 0.07em;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Hero ────────────────────────────────────────────────────────────────────
+# ── Hero ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
     <div class="hero-eyebrow">✦ AI-Powered Travel Planning</div>
@@ -270,70 +267,100 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Input card ───────────────────────────────────────────────────────────────
+# ── Chat history ─────────────────────────────────────────────────────────────
+if st.session_state.chat_history:
+    col_label, col_clear = st.columns([6, 1])
+    with col_label:
+        st.markdown('<div class="history-label">✦ Conversation History</div>', unsafe_allow_html=True)
+    with col_clear:
+        st.markdown("<div style='margin-top:1.9rem'></div>", unsafe_allow_html=True)
+        if st.button("✕ Clear", key="clear_history"):
+            st.session_state.chat_history = []
+            st.rerun()
+
+    for entry in st.session_state.chat_history:
+        # User bubble
+        st.markdown(f"""
+<div class="chat-user-row">
+    <div>
+        <div class="chat-bubble-user">🧳 {entry['question']}</div>
+        <div class="chat-bubble-meta">{entry['time']}</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+        # AI bubble — header
+        st.markdown(f"""
+<div class="chat-bubble-ai">
+    <div class="chat-ai-header">
+        <span class="chat-ai-badge">✦ Itinerary</span>
+        <span class="chat-ai-time">{entry['time']}</span>
+    </div>
+    <div class="chat-ai-body">
+</div>
+""", unsafe_allow_html=True)
+
+        st.markdown(entry['answer'])  # native render — correct heading colors
+
+        st.markdown("""
+<div class="chat-ai-footer">✦ AI-generated — verify prices &amp; requirements before booking.</div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Suggestion pills (ABOVE input) ───────────────────────────────────────────
+PILLS = [
+    ("🏝", "Plan a 7-day trip to Bali"),
+    ("🏙", "Plan a budget trip to Tokyo"),
+    ("🏔", "Plan a Zion national park trekking trip"),
+    ("🌆", "Plan a NYC weekend getaway"),
+    ("🧳", "Backpacking itinerary through Europe"),
+]
+PILL_LABELS = ["🏝 Bali, 7 days", "🏙 Tokyo budget", "🏔 Zion trekking", "🌆 NYC weekend", "🧳 Europe trip"]
+
+st.markdown('<div class="suggestion-label">Quick start — pick a destination</div>', unsafe_allow_html=True)
+
+cols = st.columns(len(PILLS))
+for i, (col, (_, query_text), label) in enumerate(zip(cols, PILLS, PILL_LABELS)):
+    with col:
+        if st.button(label, key=f"pill_{i}"):
+            st.session_state.prefill = query_text
+            st.rerun()
+
+# ── Input card ────────────────────────────────────────────────────────────────
 st.markdown('<div class="input-card">', unsafe_allow_html=True)
 
 with st.form(key="query_form", clear_on_submit=True):
     user_input = st.text_input(
         "Where are you headed?",
-        placeholder="e.g. Plan a 5-day trip to Kyoto in October for 2 people"
+        value=st.session_state.prefill,
+        placeholder="e.g. Plan a 5-day trip to Kyoto in October for 2 people",
     )
     submit_button = st.form_submit_button("✦  Plan My Trip")
 
-st.markdown("""
-<div class="suggestions">
-    <span class="pill">🏝 Bali, 7 days</span>
-    <span class="pill">🏙 Tokyo on a budget</span>
-    <span class="pill">🏔 Patagonia trek</span>
-    <span class="pill">🌆 NYC weekend</span>
-    <span class="pill">🧳 Backpack through Europe</span>
-</div>
-""", unsafe_allow_html=True)
-
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ── Response ─────────────────────────────────────────────────────────────────
-if submit_button and user_input.strip():
+# ── Handle submission ─────────────────────────────────────────────────────────
+query = user_input.strip() if submit_button and user_input.strip() else ""
+
+if query:
+    st.session_state.prefill = ""
     try:
         with st.spinner("Crafting your itinerary…"):
-            payload = {"question": user_input}
-            response = requests.post(f"{BASE_URL}/query", json=payload)
+            response = requests.post(f"{BASE_URL}/query", json={"question": query})
 
         if response.status_code == 200:
             answer = response.json().get("answer", "No answer returned.")
-            generated_at = datetime.datetime.now().strftime("%B %d, %Y · %H:%M")
-
-            # Card top + header
-            st.markdown(f"""
-<div class="resp-header-wrap">
-    <div class="resp-header">
-        <span class="resp-badge">✦ Your Itinerary</span>
-        <span class="resp-time">Generated {generated_at}</span>
-    </div>
-</div>
-<div class="resp-body-wrap">
-</div>
-""", unsafe_allow_html=True)
-
-            # Native Streamlit markdown (renders headings correctly)
-            st.markdown(answer)
-
-            # Card footer
-            st.markdown("""
-<div class="resp-footer-wrap">
-    <div class="resp-disclaimer">
-        ✦ AI-generated itinerary — verify prices, hours &amp; travel requirements before booking.
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
+            st.session_state.chat_history.append({
+                "question": query,
+                "answer":   answer,
+                "time":     datetime.datetime.now().strftime("%b %d, %Y · %H:%M"),
+            })
+            st.rerun()
         else:
-            st.error(f"The agent couldn't respond right now. Please try again. (Status {response.status_code})")
+            st.error(f"The agent couldn't respond. (Status {response.status_code})")
 
     except Exception as e:
         st.error(f"Connection failed — is the backend running on port 8000? ({e})")
 
-# ── Footer ───────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="footer">VOYAGER · AI TRAVEL PLANNER · POWERED BY AGENTIC AI</div>
-""", unsafe_allow_html=True)
+# ── Footer ────────────────────────────────────────────────────────────────────
+st.markdown('<div class="footer">VOYAGER · AI TRAVEL PLANNER · POWERED BY AGENTIC AI</div>', unsafe_allow_html=True)
