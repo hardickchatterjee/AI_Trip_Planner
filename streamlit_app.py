@@ -2,233 +2,338 @@ import streamlit as st
 import requests
 import datetime
 
-# from exception.exceptions import TradingBotException
-import sys
+BASE_URL = "http://localhost:8000"
 
-BASE_URL = "http://localhost:8000"  # Backend endpoint
-
-# Page Configuration
 st.set_page_config(
-    page_title="🌍 Travel Planner Agentic Application",
-    page_icon="🌍",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        "About": "AI Travel Planner - Your personal AI travel assistant powered by advanced agentic workflows"
-    }
+    page_title="Voyager — AI Travel Planner",
+    page_icon="✈️",
+    layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
-# Custom CSS for better styling
 st.markdown("""
-    <style>
-    .main-header {
-        text-align: center;
-        padding: 2rem 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    .chat-message {
-        padding: 1rem;
-        border-radius: 10px;
-        margin-bottom: 1rem;
-        animation: fadeIn 0.5s;
-    }
-    .user-message {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196F3;
-    }
-    .assistant-message {
-        background-color: #f3e5f5;
-        border-left: 4px solid #9c27b0;
-    }
-    .trip-card {
-        padding: 1.5rem;
-        background-color: #fafafa;
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-        margin-bottom: 1rem;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
 
-# Initialize session state
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif;
+    background-color: #0a0f1e;
+    color: #e8e4da;
+}
 
-if "trip_count" not in st.session_state:
-    st.session_state.trip_count = 0
+.stApp {
+    background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,180,60,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 110%, rgba(70,130,180,0.12) 0%, transparent 60%),
+        #0a0f1e;
+    min-height: 100vh;
+}
 
-# Sidebar Navigation
-with st.sidebar:
-    st.markdown("### 🎯 Quick Options")
-    st.markdown("---")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🗑️ Clear Chat", use_container_width=True):
-            st.session_state.messages = []
-            st.rerun()
-    
-    with col2:
-        if st.button("📝 Reset", use_container_width=True):
-            st.session_state.trip_count = 0
-            st.rerun()
-    
-    st.markdown("---")
-    
-    with st.expander("💡 **Trip Planning Tips**", expanded=False):
-        st.markdown("""
-        **Best Practices:**
-        - Be specific about dates and duration
-        - Mention your budget preferences
-        - Include any special interests
-        - Tell us about travel party size
-        - Specify dietary preferences
-        
-        **Popular Destinations:**
-        - Mountains & Trekking
-        - Beach & Island Escapes
-        - Cultural Heritage
-        - Adventure Sports
-        - Food Tours
-        """)
-    
-    with st.expander("📊 **Chat Statistics**", expanded=False):
-        st.metric("Total Trips Planned", st.session_state.trip_count)
-        st.metric("Messages in Chat", len(st.session_state.messages))
-    
-    st.markdown("---")
-    st.markdown("### ⚙️ Settings")
-    backend_url = st.text_input("Backend URL", value=BASE_URL)
+#MainMenu, footer, header { visibility: hidden; }
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 4rem;
+    max-width: 760px;
+}
 
-# Main Content Area
+/* ── Hero ── */
+.hero {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+}
+.hero-eyebrow {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #c9a84c;
+    margin-bottom: 0.75rem;
+}
+.hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.6rem, 6vw, 3.8rem);
+    font-weight: 700;
+    color: #f5f0e8;
+    line-height: 1.1;
+    margin: 0 0 0.6rem;
+    letter-spacing: -0.02em;
+}
+.hero-title span { color: #c9a84c; }
+.hero-sub {
+    font-size: 0.93rem;
+    color: #7a7a8a;
+    font-weight: 300;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.65;
+}
+.hero-divider {
+    width: 48px;
+    height: 2px;
+    background: linear-gradient(90deg, #c9a84c, transparent);
+    margin: 1.4rem auto 0;
+    border-radius: 2px;
+}
+
+/* ── Input card ── */
+.input-card {
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem 1.25rem;
+    margin: 1.5rem 0 0;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* ── Streamlit form border reset ── */
+div[data-testid="stForm"] { border: none !important; padding: 0 !important; }
+
+/* ── Text input ── */
+.stTextInput > div > div > input {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.11) !important;
+    border-radius: 10px !important;
+    color: #f0ece2 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.95rem !important;
+    padding: 0.72rem 1rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.stTextInput > div > div > input:focus {
+    border-color: #c9a84c !important;
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.12) !important;
+    outline: none !important;
+}
+.stTextInput > div > div > input::placeholder { color: #44445a !important; }
+.stTextInput label {
+    color: #7a7a8a !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 0.4rem !important;
+}
+
+/* ── Submit button — full width gold ── */
+.stFormSubmitButton { width: 100% !important; margin-top: 0.6rem; }
+.stFormSubmitButton > button {
+    width: 100% !important;
+    background: linear-gradient(135deg, #b8940e 0%, #e8c96a 50%, #b8940e 100%) !important;
+    background-size: 200% !important;
+    color: #0a0f1e !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.7rem 1.5rem !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.25) !important;
+}
+.stFormSubmitButton > button:hover {
+    box-shadow: 0 6px 30px rgba(201,168,76,0.45) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ── Suggestion pills ── */
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 1rem 0 0;
+}
+.pill {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.09);
+    color: #6a6a7a;
+    font-size: 0.76rem;
+    padding: 0.28rem 0.8rem;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* ── Response card header ── */
+.resp-header-wrap {
+    margin-top: 2rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(201,168,76,0.18);
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+    position: relative;
+}
+.resp-header-wrap::before {
+    content: '';
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #c9a84c 40%, transparent 100%);
+}
+.resp-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.75rem 0.9rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.resp-badge {
+    background: rgba(201,168,76,0.12);
+    color: #c9a84c;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid rgba(201,168,76,0.28);
+}
+.resp-time {
+    font-size: 0.73rem;
+    color: #44445a;
+    font-weight: 300;
+}
+
+/* ── Response body container ── */
+.resp-body-wrap {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(201,168,76,0.18);
+    border-top: none;
+    padding: 1.25rem 1.75rem 0.5rem;
+}
+
+/* ── Response footer ── */
+.resp-footer-wrap {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(201,168,76,0.18);
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    padding: 0.6rem 1.75rem 0.9rem;
+}
+.resp-disclaimer {
+    font-size: 0.72rem;
+    color: #33334a;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    padding-top: 0.7rem;
+}
+
+/* ── Fix markdown heading colors ── */
+[data-testid="stMarkdownContainer"] h1,
+[data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3 {
+    font-family: 'Playfair Display', serif !important;
+    color: #f0ece2 !important;
+    font-weight: 700 !important;
+}
+[data-testid="stMarkdownContainer"] h1 { font-size: 1.6rem !important; margin-top: 1.25rem !important; }
+[data-testid="stMarkdownContainer"] h2 { font-size: 1.25rem !important; margin-top: 1rem !important; }
+[data-testid="stMarkdownContainer"] h3 { font-size: 1.05rem !important; margin-top: 0.75rem !important; }
+[data-testid="stMarkdownContainer"] p  { color: #a8a49a !important; line-height: 1.75 !important; }
+[data-testid="stMarkdownContainer"] li { color: #a8a49a !important; line-height: 1.7 !important; }
+[data-testid="stMarkdownContainer"] strong { color: #e8e4da !important; }
+[data-testid="stMarkdownContainer"] hr { border-color: rgba(255,255,255,0.07) !important; }
+
+/* ── Spinner ── */
+.stSpinner > div { border-top-color: #c9a84c !important; }
+
+/* ── Error ── */
+.stAlert {
+    background: rgba(200,50,50,0.07) !important;
+    border: 1px solid rgba(200,50,50,0.22) !important;
+    border-radius: 10px !important;
+    color: #d88888 !important;
+    margin-top: 1rem;
+}
+
+/* ── Footer ── */
+.footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.68rem;
+    color: #2a2a3a;
+    letter-spacing: 0.06em;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ── Hero ────────────────────────────────────────────────────────────────────
 st.markdown("""
-    <div class="main-header">
-        <h1>🌍 Travel Planner Agentic Application</h1>
-        <p style="font-size: 1.1rem; margin-top: 0.5rem;">Your AI-Powered Travel Planning Assistant</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="hero">
+    <div class="hero-eyebrow">✦ AI-Powered Travel Planning</div>
+    <h1 class="hero-title">Voyager<span>.</span></h1>
+    <p class="hero-sub">Tell me where you want to go. I'll craft a personalised itinerary, find hidden gems, and handle every detail.</p>
+    <div class="hero-divider"></div>
+</div>
+""", unsafe_allow_html=True)
 
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.markdown("### 🗣️ Chat with Your Travel Agent")
-
-with col2:
-    st.markdown(f"### 📌 Chats: {len(st.session_state.messages)//2 if st.session_state.messages else 0}")
-
-# Display Chat History
-if st.session_state.messages:
-    st.markdown("---")
-    st.markdown("### 📖 Conversation History")
-    
-    for i, msg in enumerate(st.session_state.messages):
-        if msg["role"] == "user":
-            st.markdown(f"""
-                <div class="chat-message user-message">
-                    <strong>👤 You:</strong><br>{msg["content"]}
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div class="chat-message assistant-message">
-                    <strong>🤖 Travel Agent:</strong><br>{msg["content"][:500]}{'...' if len(msg["content"]) > 500 else ''}
-                </div>
-                """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-
-# Chat Input Form
-st.markdown("### ✍️ Plan Your Next Adventure")
+# ── Input card ───────────────────────────────────────────────────────────────
+st.markdown('<div class="input-card">', unsafe_allow_html=True)
 
 with st.form(key="query_form", clear_on_submit=True):
-    col1, col2 = st.columns([4, 1])
-    
-    with col1:
-        user_input = st.text_input(
-            "What trip would you like to plan?",
-            placeholder="e.g., Plan a 5-day trip to Goa with beach activities and local cuisine",
-            label_visibility="collapsed"
-        )
-    
-    with col2:
-        submit_button = st.form_submit_button("🚀 Send", use_container_width=True)
+    user_input = st.text_input(
+        "Where are you headed?",
+        placeholder="e.g. Plan a 5-day trip to Kyoto in October for 2 people"
+    )
+    submit_button = st.form_submit_button("✦  Plan My Trip")
 
-# Handle User Input
+st.markdown("""
+<div class="suggestions">
+    <span class="pill">🏝 Bali, 7 days</span>
+    <span class="pill">🏙 Tokyo on a budget</span>
+    <span class="pill">🏔 Patagonia trek</span>
+    <span class="pill">🌆 NYC weekend</span>
+    <span class="pill">🧳 Backpack through Europe</span>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ── Response ─────────────────────────────────────────────────────────────────
 if submit_button and user_input.strip():
     try:
-        # Add user message to chat history
-        st.session_state.messages.append({
-            "role": "user",
-            "content": user_input
-        })
-        
-        # Show loading state
-        with st.spinner("🤖 Your travel agent is thinking..."):
+        with st.spinner("Crafting your itinerary…"):
             payload = {"question": user_input}
-            response = requests.post(f"{backend_url}/query", json=payload)
+            response = requests.post(f"{BASE_URL}/query", json=payload)
 
         if response.status_code == 200:
             answer = response.json().get("answer", "No answer returned.")
-            
-            # Add assistant message to chat history
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": answer
-            })
-            
-            st.session_state.trip_count += 1
-            
-            # Display the formatted response
-            st.markdown("---")
-            st.markdown("### 🎒 Your Travel Plan")
-            
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col1:
-                st.metric("🗓️ Generated", datetime.datetime.now().strftime('%m-%d %H:%M'))
-            with col2:
-                st.metric("👤 Agent", "AI Planner")
-            with col3:
-                st.metric("📍 Status", "Ready")
-            
-            st.markdown("---")
-            
-            # Display the travel plan in an organized way
-            with st.container(border=True):
-                st.markdown(f"""
-                **Generated:** {datetime.datetime.now().strftime('%Y-%m-%d at %H:%M')}  
-                **Created by:** Atriyo's AI Travel Agent
+            generated_at = datetime.datetime.now().strftime("%B %d, %Y · %H:%M")
 
-                ---
-
-                {answer}
-
-                ---
-
-                **⚠️ Disclaimer:** This travel plan was generated by AI. Please verify all information, especially prices, operating hours, and travel requirements before your trip.
-                """)
-            
-            st.success("✅ Travel plan created successfully!")
-            st.rerun()
-        else:
-            st.error(f"❌ Bot failed to respond: {response.text}")
-
-    except requests.exceptions.ConnectionError:
-        st.error("❌ Cannot connect to backend. Please ensure the backend server is running.")
-    except Exception as e:
-        st.error(f"❌ An error occurred: {str(e)}")
-
-# Footer
-st.markdown("---")
-st.markdown("""
-    <div style="text-align: center; padding: 2rem 0; color: gray;">
-        <p>🌟 <strong>Travel Planner Agentic Application</strong> | Powered by AI & Advanced Workflows</p>
-        <p style="font-size: 0.85rem;">Made with ❤️ for travel enthusiasts</p>
+            # Card top + header
+            st.markdown(f"""
+<div class="resp-header-wrap">
+    <div class="resp-header">
+        <span class="resp-badge">✦ Your Itinerary</span>
+        <span class="resp-time">Generated {generated_at}</span>
     </div>
-    """, unsafe_allow_html=True)
+</div>
+<div class="resp-body-wrap">
+</div>
+""", unsafe_allow_html=True)
+
+            # Native Streamlit markdown (renders headings correctly)
+            st.markdown(answer)
+
+            # Card footer
+            st.markdown("""
+<div class="resp-footer-wrap">
+    <div class="resp-disclaimer">
+        ✦ AI-generated itinerary — verify prices, hours &amp; travel requirements before booking.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+        else:
+            st.error(f"The agent couldn't respond right now. Please try again. (Status {response.status_code})")
+
+    except Exception as e:
+        st.error(f"Connection failed — is the backend running on port 8000? ({e})")
+
+# ── Footer ───────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="footer">VOYAGER · AI TRAVEL PLANNER · POWERED BY AGENTIC AI</div>
+""", unsafe_allow_html=True)
