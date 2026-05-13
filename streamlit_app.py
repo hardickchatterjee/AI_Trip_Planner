@@ -2,9 +2,11 @@ import streamlit as st
 import requests
 import datetime
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 # BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
-BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 print(f"Using backend URL: {BASE_URL}")
 
 st.set_page_config(
