@@ -20,9 +20,11 @@ app.add_middleware(
 )
 class QueryRequest(BaseModel):
     question: str
+
 @app.get("/")
 async def root():
     return {"status": "running"}
+
 @app.post("/query")
 async def query_travel_agent(query:QueryRequest):
     try:
