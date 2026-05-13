@@ -531,7 +531,7 @@ PILLS = [
     ("🌆", "Plan a NYC weekend getaway"),
     ("🧳", "Backpacking itinerary through Europe"),
 ]
-PILL_LABELS = ["🏝 Bali 7d", "🏙 Tokyo budget", "🏔 Patagonia", "🌆 NYC weekend", "🧳 Europe"]
+PILL_LABELS = ["🏝 Bali 7 days", "🏙 Tokyo budget", "🏔 Patagonia", "🌆 NYC weekend", "🧳 Europe"]
 
 cols = st.columns(len(PILLS))
 for i, (col, (_, query_text), label) in enumerate(zip(cols, PILLS, PILL_LABELS)):
