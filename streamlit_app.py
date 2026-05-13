@@ -1,8 +1,11 @@
 import streamlit as st
 import requests
 import datetime
+import os
 
-BASE_URL = "http://localhost:8080"
+# BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
+BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
+print(f"Using backend URL: {BASE_URL}")
 
 st.set_page_config(
     page_title="Voyager — AI Travel Planner",
@@ -627,7 +630,7 @@ if query:
         else:
             st.error(f"The agent couldn't respond. (Status {response.status_code})")
     except Exception as e:
-        st.error(f"Connection failed — is the backend running on port 8000? ({e})")
+        st.error(f"Connection failed — is the backend running on port 8080? ({e}) {BASE_URL}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FOOTER

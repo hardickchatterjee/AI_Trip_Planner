@@ -242,7 +242,7 @@ git push origin main
    - **Name:** `ai-trip-planner-backend`
    - **Runtime:** Python 3
    - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port 8080`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}`
 5. **Add Environment Variables:**
    ```
    LLM_API_KEY = your_groq_api_key
