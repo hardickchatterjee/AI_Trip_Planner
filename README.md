@@ -217,11 +217,116 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 🆘 Support & Contact
+## � Deployment Guide
+
+### Easiest Way: Free Tier Hosting - Render (All-in-One)
+
+#### **Step 1: Prepare Your Repository**
+
+```bash
+# Make sure you have requirements.txt
+pip freeze > requirements.txt
+
+# Push to GitHub
+git add .
+git commit -m "Prepare for deployment"
+git push origin main
+```
+
+#### **Step 2: Deploy Backend on Render**
+
+1. **Go to [Render.com](https://render.com)** → Sign up with GitHub
+2. **New → Web Service**
+3. **Select your `AI_Trip_Planner` repository**
+4. **Configure:**
+   - **Name:** `ai-trip-planner-backend`
+   - **Runtime:** Python 3
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port 8080`
+5. **Add Environment Variables:**
+   ```
+   LLM_API_KEY = your_groq_api_key
+   WEATHER_API_KEY = your_weather_api_key
+   PLACE_API_KEY = your_place_search_api_key
+   CURRENCY_API_KEY = your_currency_api_key
+   ```
+6. **Click Deploy** 🚀 → Copy your backend URL (e.g., `https://ai-trip-planner-backend.onrender.com`)
+
+#### **Step 3: Deploy Frontend on Render**
+
+1. **New → Web Service** (in Render dashboard)
+2. **Select the same repository**
+3. **Configure:**
+   - **Name:** `ai-trip-planner-frontend`
+   - **Runtime:** Python 3
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0`
+4. **Add Environment Variable:**
+   ```
+   BACKEND_URL = https://ai-trip-planner-backend.onrender.com
+   ```
+5. **Click Deploy** 🚀
+
+#### **Step 4: Update Your Frontend Code**
+
+Edit `streamlit_app.py`:
+
+```python
+import os
+import streamlit as st
+
+BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
+
+st.set_page_config(
+    page_title="Voyager — AI Travel Planner",
+    page_icon="✈️",
+    layout="centered",
+)
+# Rest of your app...
+```
+
+#### **Step 5: Fix CORS in `main.py`**
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# Rest of your routes...
+```
+
+### ✅ Live & Free!
+
+- **Frontend:** `https://ai-trip-planner-frontend.onrender.com` ✨
+- **Backend:** `https://ai-trip-planner-backend.onrender.com` ⚙️
+- **Cost:** $0 (with free tier limitations)
+
+---
+
+### Post-Deployment Checklist
+
+- [ ] Set all API keys as **environment variables** (never hardcode!)
+- [ ] Test the deployed app: `https://ai-trip-planner-frontend.onrender.com`
+- [ ] Check backend logs for errors
+- [ ] Verify all API keys are set as environment variables
+- [ ] Test a full trip planning request
+- [ ] Share the link with friends! 🎉
+
+---
+
+## �🆘 Support & Contact
 
 - **Issues**: Open a GitHub issue for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for ideas and questions
-- **Email**: [your-email@example.com](mailto:your-email@example.com)
+- **Email**: [your-email@example.com](mailto:hardickchatterjee2@gmail.com)
 
 ---
 
