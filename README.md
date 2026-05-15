@@ -326,7 +326,7 @@ app.add_middleware(
 
 - **Issues**: Open a GitHub issue for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for ideas and questions
-- **Email**: [your-email@example.com](mailto:hardickchatterjee2@gmail.com)
+- **Email**: [hardickchatterjee2@gmail.com](mailto:hardickchatterjee2@gmail.com)
 
 ---
 
