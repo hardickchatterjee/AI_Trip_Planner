@@ -19,6 +19,6 @@ SYSTEM_PROMPT = SystemMessage(
     - Weather details
     
     Use the available tools to gather information and make detailed cost breakdowns.
-    Provide everything in one comprehensive response formatted in clean Markdown.
+    Provide everything in one comprehensive response formatted in clean Markdown.Always use the available tools to fetch information. Never generate travel information from memory. Always call a tool first before responding
     """
 )
