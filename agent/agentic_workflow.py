@@ -7,6 +7,7 @@ from tools.weather_info_tool import WeatherInfoTool
 from tools.place_search_tool import PlaceSearchTool
 from tools.expense_calculator_tool import CalculatorTool
 from tools.currency_conversion_tool import CurrencyConverterTool
+from langchain_core.messages import AIMessage
 
 class GraphBuilder():
     def __init__(self,model_provider: str = "groq"):
@@ -32,11 +33,31 @@ class GraphBuilder():
         self.system_prompt = SYSTEM_PROMPT
     
     
-    def agent_function(self,state: MessagesState):
+    def agent_function(self, state: MessagesState):
         """Main agent function"""
         user_question = state["messages"]
         input_question = [self.system_prompt] + user_question
-        response = self.llm_with_tools.invoke(input_question)
+        try:
+            response = self.llm_with_tools.invoke(input_question)
+        except Exception as e:
+            # Groq raises BadRequestError when the model generates plain text instead of
+            # a tool call while tools are bound. Extract the generated content and return
+            # it directly rather than losing the response entirely.
+            error_str = str(e)
+            if "tool_use_failed" in error_str or "Failed to call a function" in error_str:
+                failed_gen = ""
+                try:
+                    if hasattr(e, "response"):
+                        error_body = e.response.json()
+                        failed_gen = error_body.get("error", {}).get("failed_generation", "")
+                except Exception:
+                    pass
+                if failed_gen:
+                    response = AIMessage(content=failed_gen)
+                else:
+                    response = self.llm.invoke(input_question)
+            else:
+                raise
         return {"messages": [response]}
     def build_graph(self):
         graph_builder=StateGraph(MessagesState)
