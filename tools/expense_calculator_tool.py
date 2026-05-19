@@ -1,27 +1,37 @@
-from utils.expense_calculator import Calculator
-from typing import List
+import os
 from langchain.tools import tool
+from typing import List
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
+class CalculatorInput(BaseModel):
+    operation: str = Field(description="The operation to perform: add, subtract, multiply, or divide")
+    num1: float = Field(description="The first number")
+    num2: float = Field(description="The second number")
 
 class CalculatorTool:
     def __init__(self):
-        self.calculator = Calculator()
+        load_dotenv()
         self.calculator_tool_list = self._setup_tools()
 
     def _setup_tools(self) -> List:
-        """Setup all tools for the calculator tool"""
-        @tool
-        def estimate_total_hotel_cost(price_per_night:str, total_days:float) -> float:
-            """Calculate total hotel cost"""
-            return self.calculator.multiply(price_per_night, total_days)
+        """Setup all tools for the calculator"""
+        @tool(args_schema=CalculatorInput)
+        def calculate(operation: str, num1: float, num2: float) -> str:
+            """Perform basic arithmetic operations"""
+            operation = operation.lower()
+            if operation == "add":
+                result = num1 + num2
+            elif operation == "subtract":
+                result = num1 - num2
+            elif operation == "multiply":
+                result = num1 * num2
+            elif operation == "divide":
+                if num2 == 0:
+                    return "Error: Division by zero"
+                result = num1 / num2
+            else:
+                return f"Unknown operation: {operation}"
+            return f"{num1} {operation} {num2} = {result}"
         
-        @tool
-        def calculate_total_expense(*costs: float) -> float:
-            """Calculate total expense of the trip"""
-            return self.calculator.calculate_total(*costs)
-        
-        @tool
-        def calculate_daily_expense_budget(total_cost: float, days: int) -> float:
-            """Calculate daily expense"""
-            return self.calculator.calculate_daily_budget(total_cost, days)
-        
-        return [estimate_total_hotel_cost, calculate_total_expense, calculate_daily_expense_budget]
+        return [calculate]

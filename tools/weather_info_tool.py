@@ -3,6 +3,10 @@ from utils.weather_info import WeatherForecastTool
 from langchain.tools import tool
 from typing import List
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
+class WeatherInput(BaseModel):
+    city: str = Field(description="The city name to get weather for")
 
 class WeatherInfoTool:
     def __init__(self):
@@ -13,7 +17,7 @@ class WeatherInfoTool:
     
     def _setup_tools(self) -> List:
         """Setup all tools for the weather forecast tool"""
-        @tool
+        @tool(args_schema=WeatherInput)
         def get_current_weather(city: str) -> str:
             """Get current weather for a city"""
             weather_data = self.weather_service.get_current_weather(city)
@@ -23,7 +27,7 @@ class WeatherInfoTool:
                 return f"Current weather in {city}: {temp}°C, {desc}"
             return f"Could not fetch weather for {city}"
         
-        @tool
+        @tool(args_schema=WeatherInput)
         def get_weather_forecast(city: str) -> str:
             """Get weather forecast for a city"""
             forecast_data = self.weather_service.get_forecast_weather(city)
@@ -39,3 +43,4 @@ class WeatherInfoTool:
             return f"Could not fetch forecast for {city}"
     
         return [get_current_weather, get_weather_forecast]
+

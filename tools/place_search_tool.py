@@ -3,6 +3,10 @@ from utils.place_info_search import GooglePlaceSearchTool, TavilyPlaceSearchTool
 from typing import List
 from langchain.tools import tool
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
+class PlaceInput(BaseModel):
+    place: str = Field(description="The place name to search for")
 
 class PlaceSearchTool:
     def __init__(self):
@@ -14,8 +18,8 @@ class PlaceSearchTool:
 
     def _setup_tools(self) -> List:
         """Setup all tools for the place search tool"""
-        @tool
-        def search_attractions(place:str) -> str:
+        @tool(args_schema=PlaceInput)
+        def search_attractions(place: str) -> str:
             """Search attractions of a place"""
             try:
                 attraction_result = self.google_places_search.google_search_attractions(place)
@@ -25,8 +29,8 @@ class PlaceSearchTool:
                 tavily_result = self.tavily_search.tavily_search_attractions(place)
                 return f"Google cannot find the details due to {e}. \nFollowing are the attractions of {place}: {tavily_result}"  ## Fallback search using tavily in case google places fail
         
-        @tool
-        def search_restaurants(place:str) -> str:
+        @tool(args_schema=PlaceInput)
+        def search_restaurants(place: str) -> str:
             """Search restaurants of a place"""
             try:
                 restaurants_result = self.google_places_search.google_search_restaurants(place)
@@ -36,8 +40,8 @@ class PlaceSearchTool:
                 tavily_result = self.tavily_search.tavily_search_restaurants(place)
                 return f"Google cannot find the details due to {e}. \nFollowing are the restaurants of {place}: {tavily_result}"  ## Fallback search using tavily in case google places fail
         
-        @tool
-        def search_activities(place:str) -> str:
+        @tool(args_schema=PlaceInput)
+        def search_activities(place: str) -> str:
             """Search activities of a place"""
             try:
                 restaurants_result = self.google_places_search.google_search_activity(place)
@@ -47,8 +51,8 @@ class PlaceSearchTool:
                 tavily_result = self.tavily_search.tavily_search_activity(place)
                 return f"Google cannot find the details due to {e}. \nFollowing are the activities of {place}: {tavily_result}"  ## Fallback search using tavily in case google places fail
         
-        @tool
-        def search_transportation(place:str) -> str:
+        @tool(args_schema=PlaceInput)
+        def search_transportation(place: str) -> str:
             """Search transportation of a place"""
             try:
                 restaurants_result = self.google_places_search.google_search_transportation(place)
