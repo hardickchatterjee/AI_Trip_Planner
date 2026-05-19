@@ -6,6 +6,12 @@
 
 ---
 
+## 🌐 Live App
+
+**Production:** [https://aitripplanner-ozf7-production.up.railway.app/](https://aitripplanner-ozf7-production.up.railway.app/)
+
+---
+
 ## 🎯 Overview
 
 **AI Trip Planner** is a multi-agent agentic platform that leverages **LangGraph state machines** to orchestrate intelligent workflows for travel planning. It integrates specialized tool nodes for weather information, place search, expense calculation, and currency conversion—all accessible through a sleek **Streamlit interface** with a **FastAPI backend**.
@@ -20,7 +26,7 @@
 | 📅 **Smart Itinerary Generation** | Auto-generate detailed day-by-day travel plans |
 | 🗺️ **Destination Discovery** | Explore attractions, restaurants, and activities |
 | 💰 **Budget Planning** | Real-time expense tracking and cost estimation |
-| 🌤️ **Real-Time Information** | Live weather updates, events, and travel advisories |
+| 🌤️ **Real-Time Information** | Live weather updates and travel advisories |
 | 💱 **Currency Conversion** | Instant exchange rates across global currencies |
 
 ---
@@ -28,10 +34,10 @@
 ## 🛠️ Tech Stack
 
 - **Frontend**: Streamlit (interactive conversational UI)
-- **Backend**: FastAPI (REST API, microservices)
+- **Backend**: FastAPI (REST API)
 - **AI Orchestration**: LangGraph (agentic workflows, state machines)
-- **LLM**: Groq, OpenAI, or other LLM providers
-- **Tools**: Weather APIs, Place Search, Expense Calculators, Currency APIs
+- **LLM**: Groq (`meta-llama/llama-4-scout-17b-16e-instruct`) or OpenAI (`o4-mini`)
+- **Tools**: OpenWeatherMap, Google Places API, Tavily Search, ExchangeRate-API
 - **Language**: Python 3.8+
 
 ---
@@ -48,7 +54,7 @@
 
 **Step 1: Clone the repository**
 ```bash
-git clone https://github.com/yourusername/AI_Trip_Planner.git
+git clone https://github.com/hardickchatterjee/AI_Trip_Planner.git
 cd AI_Trip_Planner
 ```
 
@@ -63,25 +69,39 @@ source env/bin/activate  # On Windows: env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**Step 4: Configure settings**
-```bash
-# Edit config/config.yaml with your API keys and preferences
-nano config/config.yaml
+**Step 4: Set up environment variables**
+
+Create a `.env` file in the project root:
+```env
+GROQ_API_KEY=your_groq_api_key
+OPENAI_API_KEY=your_openai_api_key
+OPENWEATHERMAP_API_KEY=your_openweathermap_api_key
+GPLACES_API_KEY=your_google_places_api_key
+TAVILY_API_KEY=your_tavily_api_key
+EXCHANGE_RATE_API_KEY=your_exchangerate_api_key
+BASE_URL=http://localhost:8000
 ```
 
 ### Running the Application
 
-**Start the FastAPI backend:**
+**Terminal 1 — Start the FastAPI backend:**
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**In a new terminal, launch the Streamlit frontend:**
+**Terminal 2 — Start the Streamlit frontend:**
 ```bash
 streamlit run streamlit_app.py
 ```
 
-The app will open at `http://localhost:8501` 🎉
+The app opens at `http://localhost:8501` 🎉
+
+**Testing the backend directly:**
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Plan a 3-day trip to Paris with a $1500 budget"}'
+```
 
 ---
 
@@ -94,7 +114,7 @@ AI_Trip_Planner/
 │   └── agentic_workflow.py        # LangGraph orchestration logic
 ├── config/
 │   ├── __init__.py
-│   └── config.yaml                # Configuration settings
+│   └── config.yaml                # LLM model configuration
 ├── tools/
 │   ├── __init__.py
 │   ├── weather_info_tool.py        # Weather API integration
@@ -121,7 +141,6 @@ AI_Trip_Planner/
 │   └── exeption_handling.py        # Error handling
 ├── main.py                         # FastAPI application entry point
 ├── streamlit_app.py                # Streamlit UI entry point
-├── experiments.ipynb               # Development notebook
 ├── requirements.txt                # Python dependencies
 ├── pyproject.toml                  # Project metadata
 └── README.md                       # You are here!
@@ -137,7 +156,7 @@ Simply open the app and chat naturally:
 ```
 You: "I'm planning a 5-day trip to Paris with a $2000 budget. What should I see?"
 
-AI Trip Planner: 
+AI Trip Planner:
 ✈️ Day 1: Arrive in Paris, explore the Marais district...
 🏨 Hotels: X, Y, Z - averaging $120/night
 🍽️ Best restaurants near your hotels...
@@ -151,37 +170,31 @@ import requests
 
 BASE_URL = "http://localhost:8000"
 
-response = requests.post(f"{BASE_URL}/plan-trip", json={
-    "destination": "Paris",
-    "days": 5,
-    "budget": 2000,
-    "interests": ["art", "cuisine", "history"]
+response = requests.post(f"{BASE_URL}/query", json={
+    "question": "Plan a 5-day trip to Paris with a $2000 budget"
 })
 
-itinerary = response.json()
-print(itinerary)
+result = response.json()
+print(result["answer"])
 ```
 
 ---
 
 ## 🔧 Configuration
 
-Edit `config/config.yaml` to customize:
+`config/config.yaml` controls which LLM models are used:
 
 ```yaml
 llm:
-  provider: "groq"        # Choose: groq, openai, etc.
-  api_key: "${LLM_API_KEY}"
-
-tools:
-  weather_api_key: "${WEATHER_API_KEY}"
-  place_search_key: "${PLACE_API_KEY}"
-  currency_api_key: "${CURRENCY_API_KEY}"
-
-interface:
-  port: 8501
-  host: "localhost"
+  openai:
+    provider: "openai"
+    model_name: "o4-mini"
+  groq:
+    provider: "groq"
+    model_name: "meta-llama/llama-4-scout-17b-16e-instruct"
 ```
+
+The active provider is selected at runtime via the `model_provider` parameter in `GraphBuilder` (defaults to `"groq"`).
 
 ---
 
@@ -206,7 +219,7 @@ See `requirements.txt` for all dependencies. Key packages:
 - `langgraph` - Agentic workflow orchestration
 - `streamlit` - Interactive UI framework
 - `fastapi` - Web framework
-- `langchain` - LLM integrations
+- `langchain`, `langchain-groq`, `langchain-openai` - LLM integrations
 - `pydantic` - Data validation
 
 ---
@@ -217,112 +230,45 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## � Deployment Guide
+## 🚢 Deployment Guide
 
-### Easiest Way: Free Tier Hosting - Render (All-in-One)
+The app is deployed on **Railway**. To deploy your own instance:
 
-#### **Step 1: Prepare Your Repository**
+### Deploy on Railway
 
-```bash
-# Make sure you have requirements.txt
-pip freeze > requirements.txt
+1. **Push your code to GitHub**
+2. **Go to [Railway.app](https://railway.app)** → New Project → Deploy from GitHub repo
+3. **Add two services** from the same repo: one for the backend, one for the frontend
 
-# Push to GitHub
-git add .
-git commit -m "Prepare for deployment"
-git push origin main
-```
+**Backend service:**
+- **Start Command:** `uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}`
+- **Environment Variables:**
+  ```
+  GROQ_API_KEY=...
+  OPENAI_API_KEY=...
+  OPENWEATHERMAP_API_KEY=...
+  GPLACES_API_KEY=...
+  TAVILY_API_KEY=...
+  EXCHANGE_RATE_API_KEY=...
+  ```
 
-#### **Step 2: Deploy Backend on Render**
-
-1. **Go to [Render.com](https://render.com)** → Sign up with GitHub
-2. **New → Web Service**
-3. **Select your `AI_Trip_Planner` repository**
-4. **Configure:**
-   - **Name:** `ai-trip-planner-backend`
-   - **Runtime:** Python 3
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}`
-5. **Add Environment Variables:**
-   ```
-   LLM_API_KEY = your_groq_api_key
-   WEATHER_API_KEY = your_weather_api_key
-   PLACE_API_KEY = your_place_search_api_key
-   CURRENCY_API_KEY = your_currency_api_key
-   ```
-6. **Click Deploy** 🚀 → Copy your backend URL (e.g., `https://ai-trip-planner-backend.onrender.com`)
-
-#### **Step 3: Deploy Frontend on Render**
-
-1. **New → Web Service** (in Render dashboard)
-2. **Select the same repository**
-3. **Configure:**
-   - **Name:** `ai-trip-planner-frontend`
-   - **Runtime:** Python 3
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0`
-4. **Add Environment Variable:**
-   ```
-   BACKEND_URL = https://ai-trip-planner-backend.onrender.com
-   ```
-5. **Click Deploy** 🚀
-
-#### **Step 4: Update Your Frontend Code**
-
-Edit `streamlit_app.py`:
-
-```python
-import os
-import streamlit as st
-
-BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
-
-st.set_page_config(
-    page_title="Voyager — AI Travel Planner",
-    page_icon="✈️",
-    layout="centered",
-)
-# Rest of your app...
-```
-
-#### **Step 5: Fix CORS in `main.py`**
-
-```python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-# Rest of your routes...
-```
-
-### ✅ Live & Free!
-
-- **Frontend:** `https://ai-trip-planner-frontend.onrender.com` ✨
-- **Backend:** `https://ai-trip-planner-backend.onrender.com` ⚙️
-- **Cost:** $0 (with free tier limitations)
-
----
+**Frontend service:**
+- **Start Command:** `streamlit run streamlit_app.py --server.port=${PORT:-8501} --server.address=0.0.0.0`
+- **Environment Variables:**
+  ```
+  BASE_URL=https://<your-backend-railway-url>
+  ```
 
 ### Post-Deployment Checklist
 
-- [ ] Set all API keys as **environment variables** (never hardcode!)
-- [ ] Test the deployed app: `https://ai-trip-planner-frontend.onrender.com`
-- [ ] Check backend logs for errors
-- [ ] Verify all API keys are set as environment variables
-- [ ] Test a full trip planning request
-- [ ] Share the link with friends! 🎉
+- [ ] All API keys set as environment variables (never hardcode)
+- [ ] `BASE_URL` in frontend service points to the deployed backend URL
+- [ ] Test a full trip planning request end-to-end
+- [ ] Check service logs for errors
 
 ---
 
-## �🆘 Support & Contact
+## 🆘 Support & Contact
 
 - **Issues**: Open a GitHub issue for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for ideas and questions
